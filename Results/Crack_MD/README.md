@@ -14,16 +14,16 @@ These scripts use the initial structure files located in the subfolders and gene
 
 ## Initial Structure Files
 
-Initial model files are organized in subfolders named according to the crack orientation. For example:
+Initial structure files are organized in subfolders named according to the crack orientation using the naming convention used in the publication. For example:
 
 - `100_001/` — corresponds to a crack with (100)[001] orientation
 
-Each structure file includes the hydrogen concentration in its filename. For instance:
+The filename of each file includes the hydrogen concentration. For example:
 
-- `crack_H_261.lmp` — represents a crack model with 26.1% hydrogen concentration
+- `crack_H_261.lmp` — represents the crack model with 26.1% hydrogen concentration
 
 ## Notes
 
-- Random seeds are not included in the input scripts.  
-- Minor deviations from the published results may occur due to stochastic effects in MD simulations.
+- Random seeds are not provided.  
+- Hence, minor deviations from the published results may occur due to stochastic nature of MD simulations.
 
