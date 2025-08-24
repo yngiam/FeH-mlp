@@ -1,0 +1,92 @@
+variable L0 equal 135.805769
+variable Ll equal 6.79
+variable Lh equal 129.02
+variable tempDef equal 300.0
+variable randSeed equal 135112
+variable randSeed2 equal 715935
+variable randSeed3 equal 108702
+variable randSeed4 equal 325573
+variable randSeed5 equal 711525
+
+dimension	3
+boundary	f s p
+units		metal
+atom_style	atomic
+
+read_data crack_H_261.lmp
+
+region box1 block INF INF INF INF INF INF
+
+# define groups
+
+region	        1 block INF INF INF ${Ll} INF INF
+group		lower region 1
+region		2 block INF INF ${Lh} INF INF INF
+group		upper region 2
+group		boundary union lower upper
+group		mobile subtract all boundary
+
+pair_style mlip mlip.ini
+pair_coeff * *
+mass 1 55.845000
+mass 2 1.0
+
+# Equlibration
+
+compute		mytemp mobile temp
+velocity	mobile create ${tempDef} ${randSeed} temp mytemp
+fix		1 all nve
+fix		2 mobile langevin ${tempDef} ${tempDef} 0.1 ${randSeed2}
+fix		fflow lower setforce 0.0 0.0 0.0
+fix		ffup upper setforce 0.0 0.0 0.0
+
+# Variables
+
+variable strain equal "(ly - v_L0)/v_L0"
+variable p1 equal "v_strain"
+variable p2 equal "f_fflow[1]"
+variable p3 equal "f_ffup[1]" 
+variable p4 equal "f_fflow[2]"
+variable p5 equal "f_ffup[2]"
+variable p6 equal "f_fflow[3]" 
+variable p7 equal "f_ffup[3]"
+
+# Equlibration run
+
+timestep	0.002
+thermo		100
+thermo_style custom step v_strain temp f_fflow[2] press
+thermo_modify	temp mytemp
+thermo_modify lost ignore
+
+run		10000
+
+write_data relaxed.lmp
+unfix	2
+reset_timestep	0
+
+# initial velocities
+
+compute peratom all pe/atom
+velocity	mobile create ${tempDef} ${randSeed4} temp mytemp
+velocity	upper set 0.0 0.06 0.0
+velocity	lower set 0.0 -0.06 0.0
+velocity	mobile ramp vy -0.06 0.06 y ${Ll} ${Lh} sum yes
+
+# fixes
+
+fix		2 mobile langevin ${tempDef} ${tempDef} 0.1 ${randSeed5}
+fix     fout all ave/time 10 100 1000 f_fflow[1] f_ffup[1] f_fflow[2] f_ffup[2] f_fflow[3] f_ffup[3] file forces.dat
+
+# run
+
+timestep	0.002
+thermo		100
+thermo_style custom step v_strain temp f_fflow[2] press
+thermo_modify	temp mytemp
+thermo_modify lost ignore
+
+dump dump1 all custom 300 crack.dump id type x y z c_peratom
+
+run		100000
+write_data cracked.lmp

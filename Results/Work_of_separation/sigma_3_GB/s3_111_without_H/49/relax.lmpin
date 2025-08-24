@@ -1,0 +1,35 @@
+# LAMMPS input script to relax a molecule with fixed box dimensions
+variable distFixed equal 4
+variable ybottom equal ylo
+variable ytop equal yhi
+variable ybottomFixed equal v_ybottom+v_distFixed
+variable ytopFixed equal v_ytop-v_distFixed
+
+# Initialize simulation
+dimension	3
+units		metal
+atom_style	atomic
+boundary p f p
+
+# Read data file
+read_data initial.lmp
+
+region 1 block INF INF ${ybottom} ${ybottomFixed} INF INF units box
+group		lower region 1
+region 2 block INF INF ${ytopFixed} ${ytop} INF INF units box
+group		upper region 2
+group		boundary union lower upper
+group		mobile subtract all boundary
+
+pair_style mlip ../mlip.ini
+pair_coeff * *
+mass 1 55.8
+
+# Minimize energy
+fix		fflow lower setforce 0.0 0.0 0.0
+fix		ffup upper setforce 0.0 0.0 0.0
+min_style cg
+minimize 1.0e-6 1.0e-10 1000 10000
+
+# Write the relaxed structure to a data file
+write_data relaxed.data

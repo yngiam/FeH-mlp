@@ -1,0 +1,124 @@
+LAMMPS (29 Aug 2024 - Update 1)
+# LAMMPS input script to relax a molecule with fixed box dimensions
+variable distFixed equal 4
+variable ybottom equal ylo
+variable ytop equal yhi
+variable ybottomFixed equal v_ybottom+v_distFixed
+variable ytopFixed equal v_ytop-v_distFixed
+
+# Initialize simulation
+dimension	3
+units		metal
+atom_style	atomic
+boundary p f p
+
+# Read data file
+read_data initial.lmp
+Reading data file ...
+  orthogonal box = (0 0 0) to (14.073666 29.178962 8.1254349)
+  1 by 1 by 1 MPI processor grid
+  reading atoms ...
+  255 atoms
+  read_data CPU = 0.001 seconds
+
+region 1 block INF INF ${ybottom} ${ybottomFixed} INF INF units box
+region 1 block INF INF 0 ${ybottomFixed} INF INF units box
+region 1 block INF INF 0 4 INF INF units box
+group		lower region 1
+40 atoms in group lower
+region 2 block INF INF ${ytopFixed} ${ytop} INF INF units box
+region 2 block INF INF 25.17896156 ${ytop} INF INF units box
+region 2 block INF INF 25.17896156 29.17896156 INF INF units box
+group		upper region 2
+40 atoms in group upper
+group		boundary union lower upper
+80 atoms in group boundary
+group		mobile subtract all boundary
+175 atoms in group mobile
+
+pair_style mlip ../mlip.ini
+pair_coeff * *
+mass 1 55.8
+mass 2 1.0
+
+# Minimize energy
+fix		fflow lower setforce 0.0 0.0 0.0
+fix		ffup upper setforce 0.0 0.0 0.0
+min_style cg
+minimize 1.0e-6 1.0e-10 1000 10000
+
+CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE
+
+Your simulation uses code contributions which should be cited:
+
+- Type Label Framework: https://doi.org/10.1021/acs.jpcb.3c08419
+
+@Article{Gissinger24,
+ author = {Jacob R. Gissinger, Ilia Nikiforov, Yaser Afshar, Brendon Waters, Moon-ki Choi, Daniel S. Karls, Alexander Stukowski, Wonpil Im, Hendrik Heinz, Axel Kohlmeyer, and Ellad B. Tadmor},
+ title = {Type Label Framework for Bonded Force Fields in LAMMPS},
+ journal = {J. Phys. Chem. B},
+ year =    2024,
+ volume =  128,
+ number =  13,
+ pages =   {3282–-3297}
+}
+
+CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE
+
+Neighbor list info ...
+  update: every = 1 steps, delay = 0 steps, check = yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 8.5
+  ghost atom cutoff = 8.5
+  binsize = 4.25, bins = 4 7 2
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair mlip, perpetual
+      attributes: full, newton on
+      pair build: full/bin/atomonly
+      stencil: full/bin/3d
+      bin: standard
+Per MPI rank memory allocation (min/avg/max) = 4.261 | 4.261 | 4.261 Mbytes
+   Step          Temp          E_pair         E_mol          TotEng         Press     
+         0   0             -1946.3737      0             -1946.3737     -20045.468    
+        30   0             -1950.0368      0             -1950.0368     -31992.377    
+Loop time of 6.97453 on 1 procs for 30 steps with 255 atoms
+
+100.0% CPU use with 1 MPI tasks x no OpenMP threads
+
+Minimization stats:
+  Stopping criterion = energy tolerance
+  Energy initial, next-to-last, final = 
+     -1946.37369512432  -1950.03517609423   -1950.0367784262
+  Force two-norm initial, final = 5.611998 0.11168139
+  Force max component initial, final = 1.184328 0.024925043
+  Final line search alpha, max atom move = 1 0.024925043
+  Iterations, force evaluations = 30 50
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 6.9717     | 6.9717     | 6.9717     |   0.0 | 99.96
+Neigh   | 0.0019866  | 0.0019866  | 0.0019866  |   0.0 |  0.03
+Comm    | 0.00034609 | 0.00034609 | 0.00034609 |   0.0 |  0.00
+Output  | 0          | 0          | 0          |   0.0 |  0.00
+Modify  | 7.8107e-05 | 7.8107e-05 | 7.8107e-05 |   0.0 |  0.00
+Other   |            | 0.0004003  |            |       |  0.01
+
+Nlocal:            255 ave         255 max         255 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:           1594 ave        1594 max        1594 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:              0 ave           0 max           0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+FullNghs:        44608 ave       44608 max       44608 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 44608
+Ave neighs/atom = 174.93333
+Neighbor list builds = 2
+Dangerous builds = 0
+
+# Write the relaxed structure to a data file
+write_data relaxed.data
+System init for write_data ...
+Total wall time: 0:00:07
